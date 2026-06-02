@@ -3,41 +3,40 @@
 [🇬🇧 Read in English](README-EN.md)
 
 Полнофункциональное REST API для управления заметками, задачами и пользователями, построенное на **.NET 10**, **PostgreSQL** и **JWT-аутентификации**.  
-Разработано с учётом принципов Clean Architecture, автоматического аудита и настроек, готовых к production.
+Разработано с централизованной обработкой исключений, автоматическим аудитом и настройками, готовыми к production.
 
 ## 🚀 Возможности
 
-- **Управление пользователями** – регистрация, вход, обновление профиля, удаление аккаунта
-- **Заметки** – CRUD с архивированием, цветовыми метками
-- **Задачи** – CRUD с приоритетами (Низкий/Средний/Высокий), сроками, фильтрацией просроченных
-- **Аутентификация** – JWT access + refresh токены (стандартный ASP.NET Core JWT Bearer)
-- **Безопасность** – хеширование паролей BCrypt, GUID-ключи, секреты через переменные окружения
-- **Автоматический аудит** – поля `CreatedAt` и `UpdatedAt` управляются базой данных и перехватчиками EF Core
-- **База данных** – PostgreSQL, Entity Framework Core, миграции, фабрика времени разработки
-- **Валидация** – FluentValidation для всех входных DTO (замена атрибутов Data Annotations)
-- **Swagger UI** – интерактивная документация API по адресу `/swagger`
-- **CORS** – настраиваемая поддержка кросс-доменных запросов
-- **Структурированное логирование** – консольные логи с разной детализацией для Development/Production
-- **Чистая архитектура** – разделение на модели, DTO, сервисы, контроллеры
+- **Управление пользователями** — регистрация, вход, обновление профиля, удаление аккаунта
+- **Заметки** — CRUD с архивированием и цветовыми метками
+- **Задачи** — CRUD с приоритетами (Низкий / Средний / Высокий), сроками, фильтрацией просроченных
+- **Аутентификация** — JWT access + refresh токены (ASP.NET Core JWT Bearer)
+- **Централизованная обработка ошибок** — `GlobalExceptionHandler` + типизированные доменные исключения, ответы в формате RFC 7807 `ProblemDetails`
+- **Безопасность** — хеширование паролей BCrypt, GUID-ключи, секреты через переменные окружения
+- **Автоматический аудит** — поля `CreatedAt` и `UpdatedAt` управляются перехватчиками EF Core
+- **Валидация** — FluentValidation для всех входных DTO
+- **Swagger UI** — интерактивная документация API по адресу `/swagger`
+- **CORS** — настраиваемая поддержка кросс-доменных запросов
+- **Структурированное логирование** — консольные логи с разной детализацией для Development / Production
 
 ## 📋 Требования
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [PostgreSQL 12+](https://www.postgresql.org/download/)
-- (Опционально) Visual Studio 2024+, Rider или VS Code
+- (Опционально) Visual Studio 2022+, Rider или VS Code
 
 ## ⚙️ Инструкция по запуску
 
-### 1. Клонирование репозитория
+### 1. Клонировать репозиторий
 
 ```bash
 git clone https://github.com/Obj-Proger/notes-api.git
 cd notes-api
 ```
 
-### 2. Настройка переменных окружения
+### 2. Настроить переменные окружения
 
-Скопируйте файл-пример и отредактируйте его под свои значения:
+Скопируйте файл-пример и отредактируйте под свои значения:
 
 ```bash
 cp NotesApi/.env.example NotesApi/.env
@@ -66,47 +65,43 @@ APP_HTTPS_PORT=7001
 APP_ENV=Development
 ```
 
-### 3. Восстановление пакетов и сборка
+### 3. Убедиться, что PostgreSQL запущен
+
+```bash
+# Windows (от администратора)
+net start postgresql-x64-16
+
+# Linux / macOS
+sudo systemctl start postgresql
+```
+
+### 4. Восстановить пакеты и собрать проект
 
 ```bash
 dotnet restore
 dotnet build
 ```
 
-### 4. Применение миграций
-
-В проекте используется **фабрика времени разработки** (`AppDbContextFactory`), которая автоматически читает `.env`.  
-Просто выполните:
-
-```bash
-dotnet ef database update --project NotesApi
-```
-
-Или в консоли диспетчера пакетов Visual Studio:
-
-```powershell
-Update-Database
-```
-
-База данных PostgreSQL будет создана (если отсутствует), и все таблицы будут развёрнуты.
-
-### 5. Запуск приложения
+### 5. Запустить приложение
 
 ```bash
 dotnet run --project NotesApi
 ```
 
-API запустится на портах, указанных в `.env` (`http://localhost:5001` и `https://localhost:7001` по умолчанию).  
-Swagger UI доступен по адресу `http://localhost:5001/swagger` или `https://localhost:7001/swagger`.
+Миграции применяются автоматически при старте. Swagger UI доступен по адресу `http://localhost:5001/swagger`.
+
+> **Ручное применение миграций** (если нужно):
+> ```bash
+> dotnet ef database update --project NotesApi
+> ```
 
 ## 📚 Документация API
 
-Вся документация доступна в интерактивном виде через Swagger UI при запущенном приложении.  
-Ниже приведены краткие примеры запросов.
+Полная интерактивная документация доступна через Swagger UI при запущенном приложении.
 
 ### 🔐 Аутентификация
 
-#### Регистрация нового пользователя
+#### Регистрация
 ```http
 POST /api/auth/register
 Content-Type: application/json
@@ -120,7 +115,7 @@ Content-Type: application/json
 }
 ```
 
-#### Вход в систему
+#### Вход
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -131,66 +126,112 @@ Content-Type: application/json
 }
 ```
 
-Ответ содержит `accessToken`, `refreshToken` и срок действия.
+Ответ содержит `accessToken`, `refreshToken` и срок действия. Используйте `Bearer <accessToken>` в заголовке `Authorization` для всех защищённых эндпоинтов.
 
-### 👤 Пользователи
+### 👤 Пользователи `[Authorize]`
 
-Все методы требуют аутентификации (`Bearer <accessToken>`).
+| Метод | Путь | Описание |
+|---|---|---|
+| `GET` | `/api/users` | Список всех пользователей |
+| `GET` | `/api/users/{id}` | Профиль пользователя по ID |
+| `PUT` | `/api/users/{id}` | Обновить свой профиль |
+| `DELETE` | `/api/users/{id}` | Удалить свой аккаунт |
 
-- `GET /api/users` – список всех пользователей
-- `GET /api/users/{id}` – получить пользователя по ID (GUID)
-- `PUT /api/users/{id}` – обновить свой профиль (имя, фамилия, email)
-- `DELETE /api/users/{id}` – удалить свой аккаунт
+### 📝 Заметки `[Authorize]`
 
-### 📝 Заметки
+| Метод | Путь | Описание |
+|---|---|---|
+| `POST` | `/api/notes` | Создать заметку |
+| `GET` | `/api/notes/{id}` | Получить заметку по ID |
+| `GET` | `/api/notes/user/all` | Все активные заметки |
+| `GET` | `/api/notes/user/archived` | Архивированные заметки |
+| `PUT` | `/api/notes/{id}` | Обновить заметку (частичное обновление) |
+| `DELETE` | `/api/notes/{id}` | Удалить заметку |
 
-- `POST /api/notes` – создать заметку
-- `GET /api/notes/user/all` – все неархивированные заметки
-- `GET /api/notes/user/archived` – архивированные заметки
-- `GET /api/notes/{id}` – получить заметку по ID (GUID)
-- `PUT /api/notes/{id}` – обновить заметку (частичное обновление)
-- `DELETE /api/notes/{id}` – удалить заметку
+### ✅ Задачи `[Authorize]`
 
-### ✅ Задачи
+| Метод | Путь | Описание |
+|---|---|---|
+| `POST` | `/api/tasks` | Создать задачу |
+| `GET` | `/api/tasks/{id}` | Получить задачу по ID |
+| `GET` | `/api/tasks/user/all` | Все задачи (фильтр: `?completed=true/false`) |
+| `GET` | `/api/tasks/user/priority/{priority}` | Незавершённые задачи по приоритету |
+| `GET` | `/api/tasks/user/overdue` | Просроченные незавершённые задачи |
+| `PUT` | `/api/tasks/{id}` | Обновить задачу |
+| `DELETE` | `/api/tasks/{id}` | Удалить задачу |
 
-- `POST /api/tasks` – создать задачу
-- `GET /api/tasks/user/all?completed=false` – список задач (опциональный фильтр)
-- `GET /api/tasks/user/priority/{priority}` – фильтр по приоритету (0=Низкий,1=Средний,2=Высокий)
-- `GET /api/tasks/user/overdue` – просроченные задачи
-- `PUT /api/tasks/{id}` – обновить задачу
-- `DELETE /api/tasks/{id}` – удалить задачу
+## ⚠️ Обработка ошибок
+
+Все ошибки обрабатываются централизованно через `GlobalExceptionHandler` и возвращаются в формате RFC 7807 `ProblemDetails`.  
+Контроллеры не содержат `try/catch` — сервисы бросают типизированные доменные исключения, которые автоматически маппятся в HTTP-ответы.
+
+| Исключение | HTTP-код | Когда используется |
+|---|---|---|
+| `NotFoundException` | 404 | Ресурс не найден |
+| `ConflictException` | 409 | Дубликат email / username |
+| `UnauthorizedException` | 401 | Неверные учётные данные |
+| `ForbiddenException` | 403 | Нет прав на операцию |
+| `ValidationException` | 400 | Ошибка бизнес-валидации |
+
+Пример ответа при ошибке:
+
+```json
+{
+  "status": 404,
+  "title": "not_found",
+  "detail": "Note with id 'a1b2c3...' was not found.",
+  "instance": "/api/notes/a1b2c3..."
+}
+```
 
 ## 🧱 Структура проекта
 
 ```
-notes-api/                          # Корень репозитория
-├── NotesApi/                       # Основное приложение
-│   ├── Controllers/                # Обработчики HTTP-запросов
+NotesApi/                               # Корень репозитория
+├── NotesApi/                           # Основное приложение
+│   ├── Controllers/                    # Обработчики HTTP-запросов
+│   │   ├── ApiControllerBase.cs        # Базовый контроллер (GetUserId и др.)
 │   │   ├── AuthController.cs
 │   │   ├── NotesController.cs
 │   │   ├── TasksController.cs
 │   │   └── UsersController.cs
-│   ├── Data/                       # Контекст EF Core
+│   ├── Data/                           # Контекст EF Core
 │   │   ├── AppDbContext.cs
-│   │   ├── AppDbContextFactory.cs
-│   ├── Dtos/                       # Объекты передачи данных (контракты API)
+│   │   └── AppDbContextFactory.cs
+│   ├── Dtos/                           # Объекты передачи данных (контракты API)
 │   │   ├── Auth/
+│   │   │   ├── AuthResponseDto.cs
+│   │   │   └── LoginDto.cs
 │   │   ├── Notes/
+│   │   │   ├── CreateNoteDto.cs
+│   │   │   ├── NoteResponseDto.cs
+│   │   │   └── UpdateNoteDto.cs
 │   │   ├── Tasks/
+│   │   │   ├── CreateTaskDto.cs
+│   │   │   ├── TaskResponseDto.cs
+│   │   │   └── UpdateTaskDto.cs
 │   │   └── Users/
-│   ├── Migrations/                 # Миграции
-│   ├── Models/                     # Доменные сущности (таблицы базы данных)
+│   │       ├── CreateUserDto.cs
+│   │       ├── UpdateUserDto.cs
+│   │       └── UserResponseDto.cs
+│   ├── Exceptions/
+│   │   ├── AppException.cs             # Базовый класс доменных исключений
+│   │   └── DomainExceptions.cs         # NotFoundException, ConflictException и др.
+│   ├── Middleware/
+│   │   └── GlobalExceptionHandler.cs   # Централизованная обработка ошибок
+│   ├── Migrations/                     # Миграции
+│   ├── Models/                         # Доменные сущности (таблицы базы данных)
 │   │   ├── IAuditable.cs
 │   │   ├── Note.cs
 │   │   ├── TaskItem.cs
 │   │   └── User.cs
-│   ├── Services/                   # Бизнес-логика
+│   ├── Services/                       # Бизнес-логика
 │   │   ├── AuthService.cs
 │   │   ├── JwtService.cs
 │   │   ├── NoteService.cs
 │   │   ├── TaskService.cs
 │   │   └── UserService.cs
-│   ├── Validators/                 # Валидаторы FluentValidation
+│   ├── Validators/                     # Валидаторы FluentValidation
 │   │   ├── CreateNoteDtoValidator.cs
 │   │   ├── CreateTaskDtoValidator.cs
 │   │   ├── CreateUserDtoValidator.cs
@@ -198,10 +239,10 @@ notes-api/                          # Корень репозитория
 │   │   ├── UpdateNoteDtoValidator.cs
 │   │   ├── UpdateTaskDtoValidator.cs
 │   │   └── UpdateUserDtoValidator.cs
-│   ├── Program.cs                  # Точка входа и DI-конфигурация
+│   ├── Program.cs                      # Точка входа и DI-конфигурация
 │   ├── appsettings.json
 │   ├── appsettings.Development.json
-│   ├── .env.example                # Шаблон переменных окружения
+│   ├── .env.example                    # Шаблон переменных окружения
 │   └── NotesApi.csproj
 ├── .gitignore
 ├── LICENSE
@@ -218,30 +259,25 @@ notes-api/                          # Корень репозитория
 2. Добавить DTO в `Dtos/`
 3. Настроить сущность в `AppDbContext.OnModelCreating`
 4. Реализовать интерфейс и класс сервиса в `Services/`
-5. Добавить контроллер в `Controllers/`
+5. Добавить контроллер в `Controllers/` (наследовать от `ApiControllerBase`)
 6. Создать валидатор в `Validators/`
-7. Создать миграцию:  
-   `dotnet ef migrations add FeatureName --project NotesApi`
-8. Применить к базе данных:  
-   `dotnet ef database update --project NotesApi`
-9. Закоммитить изменения
+7. Создать и применить миграцию:
+   ```bash
+   dotnet ef migrations add FeatureName --project NotesApi
+   dotnet ef database update --project NotesApi
+   ```
 
 ### Миграции
 
-Проект использует `IDesignTimeDbContextFactory`, которая читает `.env` напрямую, поэтому нет необходимости вручную передавать строку подключения. Подробные логи EF Core включаются в режиме `Development` (см. переменную `APP_ENV`).
-
-### Тестирование
-
-Для добавления юнит-тестов создайте новый проект `NotesApi.Tests` (например, xUnit) и mock-объекты для интерфейсов сервисов.
+Проект использует `IDesignTimeDbContextFactory`, которая читает `.env` напрямую — строку подключения передавать вручную не нужно.
 
 ## 🛡️ Безопасность
 
-- Пароли хешируются алгоритмом **BCrypt** (через `BCrypt.Net-Next`).
-- Первичные ключи — **GUID** (непоследовательные, предотвращают перебор).
-- JWT-секреты хранятся **только** в переменных окружения (`.env`), никогда в `appsettings.json`.
-- `appsettings.json` не содержит секретных данных.
-- Чувствительное логирование EF Core **отключено** в Production.
-- Валидация входных данных вынесена в отдельные классы FluentValidation, что предотвращает передачу некорректных данных на уровень сервисов.
+- Пароли хешируются алгоритмом **BCrypt**
+- Первичные ключи — **GUID** (непоследовательные, предотвращают перебор)
+- JWT-секреты хранятся **только** в переменных окружения, никогда в `appsettings.json`
+- Пользователи имеют доступ только к своим данным — проверка владения на уровне сервисов
+- Чувствительное логирование EF Core отключено в Production
 
 ## 📄 Лицензия
 

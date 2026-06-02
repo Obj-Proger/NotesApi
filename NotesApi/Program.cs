@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using NotesApi.Data;
 using NotesApi.Services;
 using NotesApi.Validators;
+using NotesApi.Middleware;
 using System.Text;
 
 /// <summary>
@@ -97,8 +98,12 @@ builder.Services.AddSwaggerGen();
 
 // Register controllers (FluentValidation validators are called automatically via DI).
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 // Execute database migrations automatically on startup.
 // Warning: In production, consider running migrations separately via CLI for safety.

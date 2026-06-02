@@ -2,31 +2,30 @@
 
 [🇷🇺 Читать на русском](README.md)
 
-A full-featured REST API for managing notes, tasks, and users, built with **.NET 10**, **PostgreSQL**, and **JWT authentication**.  
-Designed with Clean Architecture principles, automatic auditing, and production-ready configuration.
+A fully-featured REST API for managing notes, tasks, and users, built with **.NET 10**, **PostgreSQL**, and **JWT authentication**.  
+Designed with centralized exception handling, automatic auditing, and production-ready configuration.
 
 ## 🚀 Features
 
-- **User Management** – registration, login, profile update, account deletion
-- **Notes** – CRUD with archiving and color labels
-- **Tasks** – CRUD with priorities (Low/Medium/High), due dates, overdue filtering
-- **Authentication** – JWT access + refresh tokens (standard ASP.NET Core JWT Bearer)
-- **Security** – BCrypt password hashing, GUID primary keys, secrets via environment variables
-- **Automatic Auditing** – `CreatedAt` and `UpdatedAt` fields managed by database defaults and EF Core interceptors
-- **Database** – PostgreSQL, Entity Framework Core, migrations, design-time factory
-- **Validation** – FluentValidation for all input DTOs (replaces Data Annotations)
-- **Swagger UI** – interactive API documentation at `/swagger`
-- **CORS** – configurable cross-origin support
-- **Structured Logging** – console logging with different verbosity for Development/Production
-- **Clean Architecture** – separation into Models, DTOs, Services, Controllers
+- **User management** — registration, login, profile updates, account deletion
+- **Notes** — CRUD with archiving and color labels
+- **Tasks** — CRUD with priorities (Low / Medium / High), due dates, overdue filtering
+- **Authentication** — JWT access + refresh tokens (ASP.NET Core JWT Bearer)
+- **Centralized error handling** — `GlobalExceptionHandler` + typed domain exceptions, RFC 7807 `ProblemDetails` responses
+- **Security** — BCrypt password hashing, GUID keys, secrets via environment variables
+- **Automatic auditing** — `CreatedAt` and `UpdatedAt` fields managed by EF Core interceptors
+- **Validation** — FluentValidation for all input DTOs
+- **Swagger UI** — interactive API documentation at `/swagger`
+- **CORS** — configurable cross-origin request support
+- **Structured logging** — console logs with different verbosity for Development / Production
 
-## 📋 Prerequisites
+## 📋 Requirements
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [PostgreSQL 12+](https://www.postgresql.org/download/)
-- (Optional) Visual Studio 2024+, Rider, or VS Code
+- (Optional) Visual Studio 2022+, Rider, or VS Code
 
-## ⚙️ Setup Instructions
+## ⚙️ Getting Started
 
 ### 1. Clone the repository
 
@@ -37,13 +36,13 @@ cd notes-api
 
 ### 2. Configure environment variables
 
-Copy the example file and edit it with your settings:
+Copy the example file and fill in your values:
 
 ```bash
 cp NotesApi/.env.example NotesApi/.env
 ```
 
-Open `NotesApi/.env` and fill in:
+Open `NotesApi/.env` and configure:
 
 ```env
 # Database
@@ -54,11 +53,11 @@ DB_USER=postgres
 DB_PASSWORD=your_secure_password
 
 # JWT
-JWT_SECRET=your_super_secret_key_minimum_32_characters_long!
+JWT_SECRET=your_super_secret_key_at_least_32_chars!
 JWT_EXPIRATION_MINUTES=60
 JWT_REFRESH_EXPIRATION_DAYS=7
 
-# HTTP and HTTPS ports
+# Application ports
 APP_HTTP_PORT=5001
 APP_HTTPS_PORT=7001
 
@@ -66,29 +65,22 @@ APP_HTTPS_PORT=7001
 APP_ENV=Development
 ```
 
-### 3. Restore packages and build
+### 3. Make sure PostgreSQL is running
+
+```bash
+# Windows (run as Administrator)
+net start postgresql-x64-16
+
+# Linux / macOS
+sudo systemctl start postgresql
+```
+
+### 4. Restore packages and build
 
 ```bash
 dotnet restore
 dotnet build
 ```
-
-### 4. Apply migrations
-
-The project includes a **design-time factory** (`AppDbContextFactory`) that reads `.env` automatically.  
-Simply run:
-
-```bash
-dotnet ef database update --project NotesApi
-```
-
-Or in the Visual Studio Package Manager Console:
-
-```powershell
-Update-Database
-```
-
-The PostgreSQL database will be created (if it doesn't exist) and all tables will be set up.
 
 ### 5. Run the application
 
@@ -96,17 +88,20 @@ The PostgreSQL database will be created (if it doesn't exist) and all tables wil
 dotnet run --project NotesApi
 ```
 
-The API will start on the ports specified in `.env` (`http://localhost:5001` and `https://localhost:7001` by default).  
-Swagger UI is available at `http://localhost:5001/swagger` or `https://localhost:7001/swagger`.
+Migrations are applied automatically on startup. Swagger UI is available at `http://localhost:5001/swagger`.
 
-## 📚 API Documentation
+> **Manual migration** (if needed):
+> ```bash
+> dotnet ef database update --project NotesApi
+> ```
 
-All endpoints are documented interactively via Swagger UI when the application is running.  
-Below is a quick reference.
+## 📚 API Reference
+
+Full interactive documentation is available via Swagger UI when the application is running.
 
 ### 🔐 Authentication
 
-#### Register a new user
+#### Register
 ```http
 POST /api/auth/register
 Content-Type: application/json
@@ -131,77 +126,94 @@ Content-Type: application/json
 }
 ```
 
-The response contains `accessToken`, `refreshToken`, and expiration.
+The response contains `accessToken`, `refreshToken`, and expiration time. Use `Bearer <accessToken>` in the `Authorization` header for all protected endpoints.
 
-### 👤 Users
+### 👤 Users `[Authorize]`
 
-All endpoints require authentication (`Bearer <accessToken>`).
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/users` | List all users |
+| `GET` | `/api/users/{id}` | Get user profile by ID |
+| `PUT` | `/api/users/{id}` | Update own profile |
+| `DELETE` | `/api/users/{id}` | Delete own account |
 
-- `GET /api/users` – list all users
-- `GET /api/users/{id}` – get user by ID (GUID)
-- `PUT /api/users/{id}` – update own profile (first name, last name, email)
-- `DELETE /api/users/{id}` – delete own account
+### 📝 Notes `[Authorize]`
 
-### 📝 Notes
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/notes` | Create a note |
+| `GET` | `/api/notes/{id}` | Get note by ID |
+| `GET` | `/api/notes/user/all` | All active notes |
+| `GET` | `/api/notes/user/archived` | Archived notes |
+| `PUT` | `/api/notes/{id}` | Update a note (partial update) |
+| `DELETE` | `/api/notes/{id}` | Delete a note |
 
-- `POST /api/notes` – create a note
-- `GET /api/notes/user/all` – get all non-archived notes
-- `GET /api/notes/user/archived` – get archived notes
-- `GET /api/notes/{id}` – get note by ID (GUID)
-- `PUT /api/notes/{id}` – update note (partial updates supported)
-- `DELETE /api/notes/{id}` – delete note
+### ✅ Tasks `[Authorize]`
 
-### ✅ Tasks
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/tasks` | Create a task |
+| `GET` | `/api/tasks/{id}` | Get task by ID |
+| `GET` | `/api/tasks/user/all` | All tasks (filter: `?completed=true/false`) |
+| `GET` | `/api/tasks/user/priority/{priority}` | Incomplete tasks by priority |
+| `GET` | `/api/tasks/user/overdue` | Overdue incomplete tasks |
+| `PUT` | `/api/tasks/{id}` | Update a task |
+| `DELETE` | `/api/tasks/{id}` | Delete a task |
 
-- `POST /api/tasks` – create a task
-- `GET /api/tasks/user/all?completed=false` – list tasks (optional filter)
-- `GET /api/tasks/user/priority/{priority}` – filter by priority (0=Low,1=Medium,2=High)
-- `GET /api/tasks/user/overdue` – get overdue tasks
-- `PUT /api/tasks/{id}` – update task
-- `DELETE /api/tasks/{id}` – delete task
+## ⚠️ Error Handling
+
+All errors are handled centrally by `GlobalExceptionHandler` and returned as RFC 7807 `ProblemDetails`.  
+Controllers contain no `try/catch` blocks — services throw typed domain exceptions that are automatically mapped to HTTP responses.
+
+| Exception | HTTP Code | When Used |
+|---|---|---|
+| `NotFoundException` | 404 | Resource not found |
+| `ConflictException` | 409 | Duplicate email / username |
+| `UnauthorizedException` | 401 | Invalid credentials |
+| `ForbiddenException` | 403 | Insufficient permissions |
+| `ValidationException` | 400 | Business validation failure |
+
+Example error response:
+
+```json
+{
+  "status": 404,
+  "title": "not_found",
+  "detail": "Note with id 'a1b2c3...' was not found.",
+  "instance": "/api/notes/a1b2c3..."
+}
+```
 
 ## 🧱 Project Structure
 
 ```
-notes-api/                          # Repository root
-├── NotesApi/                       # Main application
-│   ├── Controllers/                # HTTP request handlers
+NotesApi/                               # Repository root
+├── NotesApi/                           # Main application
+│   ├── Controllers/                    # HTTP request handlers
+│   │   ├── ApiControllerBase.cs        # Base controller (GetUserId, etc.)
 │   │   ├── AuthController.cs
 │   │   ├── NotesController.cs
 │   │   ├── TasksController.cs
 │   │   └── UsersController.cs
-│   ├── Data/                       # EF Core DbContext
-│   │   ├── AppDbContext.cs
-│   │   └── AppDbContextFactory.cs
-│   ├── Dtos/                       # Data Transfer Objects (API contracts)
+│   ├── Data/                           # EF Core DbContext
+│   ├── Dtos/                           # Data Transfer Objects (API contracts)
 │   │   ├── Auth/
 │   │   ├── Notes/
 │   │   ├── Tasks/
 │   │   └── Users/
-│   ├── Migrations/                 # Database migrations
-│   ├── Models/                     # Domain entities (database tables)
-│   │   ├── IAuditable.cs
-│   │   ├── Note.cs
-│   │   ├── TaskItem.cs
-│   │   └── User.cs
-│   ├── Services/                   # Business logic
-│   │   ├── AuthService.cs
-│   │   ├── JwtService.cs
-│   │   ├── NoteService.cs
-│   │   ├── TaskService.cs
-│   │   └── UserService.cs
-│   ├── Validators/                 # FluentValidation validators
-│   │   ├── CreateNoteDtoValidator.cs
-│   │   ├── CreateTaskDtoValidator.cs
-│   │   ├── CreateUserDtoValidator.cs
-│   │   ├── LoginDtoValidator.cs
-│   │   ├── UpdateNoteDtoValidator.cs
-│   │   ├── UpdateTaskDtoValidator.cs
-│   │   └── UpdateUserDtoValidator.cs
-│   ├── Program.cs                  # Entry point and DI configuration
+│   ├── Exceptions/
+│   │   ├── AppException.cs             # Base class for domain exceptions
+│   │   └── DomainExceptions.cs         # NotFoundException, ConflictException, etc.
+│   ├── Middleware/
+│   │   └── GlobalExceptionHandler.cs   # Centralized error handling
+│   ├── Migrations/                     # Database migrations
+│   ├── Models/                         # Domain entities (database tables)
+│   ├── Services/                       # Business logic
+│   ├── Validators/                     # FluentValidation validators
+│   ├── Program.cs
 │   ├── appsettings.json
 │   ├── appsettings.Development.json
-│   ├── .env.example                # Environment variables template
+│   ├── .env.example
 │   └── NotesApi.csproj
 ├── .gitignore
 ├── LICENSE
@@ -212,36 +224,31 @@ notes-api/                          # Repository root
 
 ## 🔧 Development
 
-### Adding a new feature
+### Adding New Features
 
 1. Create an entity in `Models/`
 2. Add DTOs in `Dtos/`
 3. Configure the entity in `AppDbContext.OnModelCreating`
 4. Implement the service interface and class in `Services/`
-5. Add a controller in `Controllers/`
+5. Add a controller in `Controllers/` (inherit from `ApiControllerBase`)
 6. Create a validator in `Validators/`
-7. Create a migration:  
-   `dotnet ef migrations add FeatureName --project NotesApi`
-8. Apply to database:  
-   `dotnet ef database update --project NotesApi`
-9. Commit changes
+7. Create and apply a migration:
+   ```bash
+   dotnet ef migrations add FeatureName --project NotesApi
+   dotnet ef database update --project NotesApi
+   ```
 
 ### Migrations
 
-The project uses an `IDesignTimeDbContextFactory` that reads `.env` directly, so there is no need to pass a connection string manually. Detailed EF Core logs are enabled in `Development` mode (see the `APP_ENV` variable).
-
-### Testing
-
-To add unit tests, create a new `NotesApi.Tests` project (e.g., xUnit) and mock the service interfaces.
+The project uses `IDesignTimeDbContextFactory` which reads `.env` directly — no need to pass a connection string manually.
 
 ## 🛡️ Security
 
-- Passwords are hashed with **BCrypt** (via `BCrypt.Net-Next`).
-- Primary keys are **GUIDs** (non-sequential, preventing enumeration).
-- JWT secrets are stored **only** in environment variables (`.env`), never in `appsettings.json`.
-- `appsettings.json` contains no sensitive data.
-- Sensitive EF Core logging is **disabled** in Production.
-- Input validation is extracted into separate FluentValidation classes, preventing invalid data from reaching the service layer.
+- Passwords are hashed with **BCrypt**
+- Primary keys are **GUIDs** (non-sequential, resistant to enumeration)
+- JWT secrets are stored **only** in environment variables, never in `appsettings.json`
+- Users can only access their own data — ownership enforced at the service layer
+- Sensitive EF Core logging is disabled in Production
 
 ## 📄 License
 
@@ -253,4 +260,4 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 
 ---
 
-**Suggestions, bug reports, and pull requests are welcome!**
+**Issues, bug reports, and pull requests are welcome!**
