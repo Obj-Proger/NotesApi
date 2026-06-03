@@ -196,24 +196,11 @@ NotesApi/                               # Корень репозитория
 │   │   ├── TasksController.cs
 │   │   └── UsersController.cs
 │   ├── Data/                           # Контекст EF Core
-│   │   ├── AppDbContext.cs
-│   │   └── AppDbContextFactory.cs
 │   ├── Dtos/                           # Объекты передачи данных (контракты API)
 │   │   ├── Auth/
-│   │   │   ├── AuthResponseDto.cs
-│   │   │   └── LoginDto.cs
 │   │   ├── Notes/
-│   │   │   ├── CreateNoteDto.cs
-│   │   │   ├── NoteResponseDto.cs
-│   │   │   └── UpdateNoteDto.cs
 │   │   ├── Tasks/
-│   │   │   ├── CreateTaskDto.cs
-│   │   │   ├── TaskResponseDto.cs
-│   │   │   └── UpdateTaskDto.cs
 │   │   └── Users/
-│   │       ├── CreateUserDto.cs
-│   │       ├── UpdateUserDto.cs
-│   │       └── UserResponseDto.cs
 │   ├── Exceptions/
 │   │   ├── AppException.cs             # Базовый класс доменных исключений
 │   │   └── DomainExceptions.cs         # NotFoundException, ConflictException и др.
@@ -221,24 +208,8 @@ NotesApi/                               # Корень репозитория
 │   │   └── GlobalExceptionHandler.cs   # Централизованная обработка ошибок
 │   ├── Migrations/                     # Миграции
 │   ├── Models/                         # Доменные сущности (таблицы базы данных)
-│   │   ├── IAuditable.cs
-│   │   ├── Note.cs
-│   │   ├── TaskItem.cs
-│   │   └── User.cs
 │   ├── Services/                       # Бизнес-логика
-│   │   ├── AuthService.cs
-│   │   ├── JwtService.cs
-│   │   ├── NoteService.cs
-│   │   ├── TaskService.cs
-│   │   └── UserService.cs
 │   ├── Validators/                     # Валидаторы FluentValidation
-│   │   ├── CreateNoteDtoValidator.cs
-│   │   ├── CreateTaskDtoValidator.cs
-│   │   ├── CreateUserDtoValidator.cs
-│   │   ├── LoginDtoValidator.cs
-│   │   ├── UpdateNoteDtoValidator.cs
-│   │   ├── UpdateTaskDtoValidator.cs
-│   │   └── UpdateUserDtoValidator.cs
 │   ├── Program.cs                      # Точка входа и DI-конфигурация
 │   ├── appsettings.json
 │   ├── appsettings.Development.json
